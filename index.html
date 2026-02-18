@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#e74c3c">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Toong Calculator</title>
+<link rel="manifest" href="manifest.json">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>T</text></svg>">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Malgun Gothic','맑은 고딕',sans-serif;background:#f5f5f5;color:#333;font-size:15px;padding-bottom:env(safe-area-inset-bottom)}
+.container{max-width:520px;margin:0 auto;padding:12px}
+h1{font-size:22px;font-weight:700;margin-bottom:2px}
+.caption{color:#888;font-size:12px;margin-bottom:14px}
+.section{background:#fff;border-radius:12px;padding:14px;margin-bottom:12px;box-shadow:0 1px 3px rgba(0,0,0,.08)}
+.section h2{font-size:16px;font-weight:600;margin-bottom:10px;display:flex;align-items:center;gap:6px}
+.side-label{display:inline-block;font-size:11px;font-weight:700;color:#fff;padding:2px 8px;border-radius:4px;margin-bottom:4px}
+.sell-label{background:#4169E1}
+.buy-label{background:#3CB371}
+textarea{width:100%;border:1px solid #ddd;border-radius:8px;padding:10px;font-size:14px;font-family:monospace;resize:vertical;min-height:60px}
+textarea:focus{outline:none;border-color:#e74c3c}
+.paste-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px}
+.btn{display:inline-flex;align-items:center;justify-content:center;padding:10px 16px;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;transition:background .15s}
+.btn-primary{background:#e74c3c;color:#fff;width:100%;font-size:16px;padding:14px}
+.btn-primary:active{background:#c0392b}
+.btn-sm{padding:7px 12px;font-size:13px;background:#eee;border-radius:6px}
+.btn-sm:active{background:#ddd}
+.close-input{display:flex;align-items:center;gap:8px;margin-bottom:12px}
+.close-input label{font-size:14px;font-weight:600;white-space:nowrap}
+.close-input input{flex:1;border:1px solid #ddd;border-radius:8px;padding:10px;font-size:16px;text-align:right}
+.close-input input:focus{outline:none;border-color:#e74c3c}
+table{width:100%;border-collapse:collapse;font-size:13px;margin:8px 0}
+th{background:#f8f9fa;padding:6px 8px;text-align:center;font-weight:600;border-bottom:2px solid #dee2e6}
+td{padding:5px 8px;text-align:center;border-bottom:1px solid #eee}
+td.sell{color:#4169E1;font-weight:600}
+td.buy{color:#3CB371;font-weight:600}
+canvas{width:100%;border-radius:8px;background:#fafafa;margin:6px 0}
+.exec-line{font-size:13px;margin:4px 0;line-height:1.5}
+.exec-line b{font-weight:700}
+.alert{padding:10px 14px;border-radius:8px;font-size:13px;font-weight:600;margin:6px 0}
+.alert-danger{background:#fde8e8;color:#c0392b}
+.alert-success{background:#d4edda;color:#155724}
+.alert-warning{background:#fff3cd;color:#856404}
+.alert-info{background:#d1ecf1;color:#0c5460}
+.result-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+@media(max-width:500px){.result-grid{grid-template-columns:1fr}}
+.order-row{display:grid;grid-template-columns:70px 1fr 70px 40px;gap:4px;align-items:center;margin-bottom:4px}
+.order-row select,.order-row input{border:1px solid #ddd;border-radius:6px;padding:6px;font-size:14px}
+.order-row input{text-align:right}
+.order-row .del-btn{background:none;border:none;color:#ccc;font-size:18px;cursor:pointer;padding:4px}
+.order-row .del-btn:active{color:#e74c3c}
+.order-controls{display:flex;gap:6px;margin-top:6px}
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>Toong (퉁치기 계산기)</h1>
+  <p class="caption">매도/매수 LOC/MOC 주문 → 자전거래 방지 최적화</p>
+
+  <!-- 붙여넣기 -->
+  <div class="section">
+    <h2>붙여넣기</h2>
+    <p class="caption">엑셀에서 복사한 데이터 (소수점→가격, 정수→수량)</p>
+    <div class="paste-grid">
+      <div>
+        <span class="side-label sell-label">매도</span>
+        <textarea id="sellPaste" placeholder="LOC&#9;72.23&#9;26&#10;MOC&#9;0&#9;10"></textarea>
+      </div>
+      <div>
+        <span class="side-label buy-label">매수</span>
+        <textarea id="buyPaste" placeholder="LOC&#9;64.26&#9;32"></textarea>
+      </div>
+    </div>
+    <button class="btn btn-sm" style="width:100%" onclick="applyPaste()">붙여넣기 적용</button>
+  </div>
+
+  <!-- 매도 주문 -->
+  <div class="section">
+    <h2><span class="side-label sell-label">매도</span> 주문</h2>
+    <div id="sellOrders"></div>
+    <div class="order-controls">
+      <button class="btn btn-sm" onclick="addRow('sell')">+ 추가</button>
+      <button class="btn btn-sm" onclick="clearOrders('sell')">모두 지우기</button>
+    </div>
+  </div>
+
+  <!-- 매수 주문 -->
+  <div class="section">
+    <h2><span class="side-label buy-label">매수</span> 주문</h2>
+    <div id="buyOrders"></div>
+    <div class="order-controls">
+      <button class="btn btn-sm" onclick="addRow('buy')">+ 추가</button>
+      <button class="btn btn-sm" onclick="clearOrders('buy')">모두 지우기</button>
+    </div>
+  </div>
+
+  <!-- 종가 + 계산 -->
+  <div class="section">
+    <div class="close-input">
+      <label>종가 ($)</label>
+      <input type="number" id="closePrice" value="53.19" step="0.01">
+    </div>
+    <button class="btn btn-primary" onclick="calculate()">퉁치기 계산</button>
+  </div>
+
+  <!-- 결과 -->
+  <div id="resultArea" style="display:none">
+    <div class="result-grid">
+      <div class="section" id="origResult"></div>
+      <div class="section" id="netResult"></div>
+    </div>
+    <div class="section" id="verifyResult"></div>
+  </div>
+</div>
+
+<script>
+// ══════════════════════════════════════════════════════════════
+// 퉁치기 엔진 (Python → JS 1:1 포팅)
+// ══════════════════════════════════════════════════════════════
+
+function parseOrders(data, side) {
+  const orders = [];
+  for (const row of data) {
+    const oType = String(row[0]).toUpperCase().trim();
+    const price = parseFloat(row[1]) || 0;
+    const qty = parseInt(row[2]) || 0;
+    if (qty <= 0) continue;
+    if (oType === 'MOC') {
+      const existing = orders.find(o => o.type === 'MOC');
+      if (existing) { existing.quantity += qty; }
+      else { orders.push({type:'MOC', price:0, quantity:qty, side}); }
+    } else {
+      orders.push({type:'LOC', price, quantity:qty, side});
+    }
+  }
+  return orders;
+}
+
+function mergeSameOrders(orders) {
+  const merged = {};
+  for (const o of orders) {
+    const key = `${o.side}|${o.type}|${o.price}`;
+    if (merged[key]) { merged[key].quantity += o.quantity; }
+    else { merged[key] = {...o}; }
+  }
+  return Object.values(merged);
+}
+
+function netOrders(sellOrders, buyOrders) {
+  if (!sellOrders.length || !buyOrders.length)
+    return [sellOrders.map(o=>({...o})), buyOrders.map(o=>({...o}))];
+
+  const buySorted = buyOrders.map(o=>({...o})).sort((a,b) => b.price - a.price);
+  let sellMocQty = sellOrders.filter(s=>s.type==='MOC').reduce((s,o)=>s+o.quantity,0);
+  const sellLoc = sellOrders.filter(s=>s.type!=='MOC')
+    .map(s=>({type:'LOC', price:s.price, quantity:s.quantity, side:'매도'}))
+    .sort((a,b) => a.price - b.price);
+
+  const newSell = [], newBuy = [];
+
+  for (const bo of buySorted) {
+    if (bo.quantity <= 0) continue;
+    const initQty = bo.quantity;
+    let executed = 0;
+
+    if (sellMocQty > 0) {
+      const matched = Math.min(bo.quantity, sellMocQty);
+      bo.quantity -= matched; sellMocQty -= matched; executed += matched;
+    }
+
+    for (const so of sellLoc) {
+      if (bo.quantity <= 0) break;
+      if (so.quantity <= 0) continue;
+      if (so.price > bo.price) break;
+      const matched = Math.min(bo.quantity, so.quantity);
+      newBuy.push({type:'LOC', price:Math.round((so.price-0.01)*100)/100, quantity:matched, side:'매수'});
+      bo.quantity -= matched; so.quantity -= matched; executed += matched;
+    }
+
+    if (executed === 0) {
+      newBuy.push({type:'LOC', price:bo.price, quantity:initQty, side:'매수'});
+    } else if (bo.quantity > 0) {
+      newBuy.push({type:'LOC', price:bo.price, quantity:bo.quantity, side:'매수'});
+      newSell.push({type:'LOC', price:Math.round((bo.price+0.01)*100)/100, quantity:executed, side:'매도'});
+    } else {
+      newSell.push({type:'LOC', price:Math.round((bo.price+0.01)*100)/100, quantity:initQty, side:'매도'});
+    }
+  }
+
+  if (sellMocQty > 0) newSell.push({type:'MOC', price:0, quantity:sellMocQty, side:'매도'});
+  for (const so of sellLoc) {
+    if (so.quantity > 0) newSell.push({type:'LOC', price:so.price, quantity:so.quantity, side:'매도'});
+  }
+
+  const ms = mergeSameOrders(newSell).sort((a,b) => b.price - a.price);
+  const mb = mergeSameOrders(newBuy).sort((a,b) => b.price - a.price);
+  return [ms, mb];
+}
+
+function simExec(buyOrders, sellOrders, close) {
+  const eb = buyOrders.reduce((s,o) => s + (o[0]==='MOC' || close<=o[1] ? o[2] : 0), 0);
+  const es = sellOrders.reduce((s,o) => s + (o[0]==='MOC' || close>=o[1] ? o[2] : 0), 0);
+  return [eb, es, eb - es];
+}
+
+// ══════════════════════════════════════════════════════════════
+// 붙여넣기 파서
+// ══════════════════════════════════════════════════════════════
+
+function parsePaste(text) {
+  const rows = [];
+  for (let line of text.trim().split('\n')) {
+    line = line.trim();
+    if (!line) continue;
+    const tokens = line.split(/[\t,]+/).map(t => t.trim()).filter(Boolean);
+    if (!tokens.length) continue;
+    const lower = tokens.join(' ').toLowerCase();
+    if (['타입','가격','수량','type','price','qty','quantity'].some(k => lower.includes(k))) continue;
+
+    let oType='LOC', price=0, qty=0, pf=false, qf=false;
+    for (const tok of tokens) {
+      const upper = tok.toUpperCase().replace(/^\$\s*/,'');
+      if (upper==='LOC'||upper==='MOC') { oType=upper; continue; }
+      const cleaned = tok.replace(/[$,]/g,'').trim();
+      const val = parseFloat(cleaned);
+      if (isNaN(val)) continue;
+      if (cleaned.includes('.') && !pf) { price=Math.round(val*100)/100; pf=true; }
+      else if (val===Math.floor(val) && !qf) { qty=Math.floor(val); qf=true; }
+      else if (!pf) { price=Math.round(val*100)/100; pf=true; }
+      else if (!qf) { qty=Math.floor(val); qf=true; }
+    }
+    if (qty > 0 || price > 0) {
+      if (qty === 0) qty = 1;
+      rows.push([oType, price, qty]);
+    }
+  }
+  return rows;
+}
+
+// ══════════════════════════════════════════════════════════════
+// UI 로직
+// ══════════════════════════════════════════════════════════════
+
+const sellData = [['LOC', 72.23, 26], ['LOC', 62.73, 30]];
+const buyData = [['LOC', 64.26, 32]];
+
+function renderOrders(side) {
+  const data = side === 'sell' ? sellData : buyData;
+  const el = document.getElementById(side + 'Orders');
+  el.innerHTML = '';
+  data.forEach((row, i) => {
+    const div = document.createElement('div');
+    div.className = 'order-row';
+    div.innerHTML = `
+      <select onchange="${side}Data[${i}][0]=this.value">
+        <option ${row[0]==='LOC'?'selected':''}>LOC</option>
+        <option ${row[0]==='MOC'?'selected':''}>MOC</option>
+      </select>
+      <input type="number" step="0.01" value="${row[1]}" placeholder="가격"
+             onchange="${side}Data[${i}][1]=parseFloat(this.value)||0">
+      <input type="number" step="1" value="${row[2]}" placeholder="수량"
+             onchange="${side}Data[${i}][2]=parseInt(this.value)||0">
+      <button class="del-btn" onclick="${side}Data.splice(${i},1);renderOrders('${side}')">&#x2715;</button>
+    `;
+    el.appendChild(div);
+  });
+}
+
+function addRow(side) {
+  (side === 'sell' ? sellData : buyData).push(['LOC', 0, 0]);
+  renderOrders(side);
+}
+
+function clearOrders(side) {
+  if (side === 'sell') { sellData.length = 0; }
+  else { buyData.length = 0; }
+  renderOrders(side);
+}
+
+function applyPaste() {
+  const sp = parsePaste(document.getElementById('sellPaste').value);
+  const bp = parsePaste(document.getElementById('buyPaste').value);
+  if (sp.length) { sellData.length = 0; sp.forEach(r => sellData.push(r)); }
+  if (bp.length) { buyData.length = 0; bp.forEach(r => buyData.push(r)); }
+  renderOrders('sell');
+  renderOrders('buy');
+}
+
+// ══════════════════════════════════════════════════════════════
+// 바 차트 (Canvas)
+// ══════════════════════════════════════════════════════════════
+
+function drawChart(canvas, buyOrders, sellOrders) {
+  const ctx = canvas.getContext('2d');
+  const dpr = window.devicePixelRatio || 1;
+  const priceSet = new Set();
+  buyOrders.forEach(o => priceSet.add(o[1]));
+  sellOrders.forEach(o => priceSet.add(o[1]));
+  if (!priceSet.size) { canvas.style.display='none'; return; }
+  canvas.style.display='block';
+
+  const prices = [...priceSet].sort((a,b)=>a-b);
+  const buyMap={}, sellMap={};
+  buyOrders.forEach(o => { buyMap[o[1]] = (buyMap[o[1]]||0) + o[2]; });
+  sellOrders.forEach(o => { sellMap[o[1]] = (sellMap[o[1]]||0) + o[2]; });
+
+  const barH = 24, gap = 4, labelW = 60, pad = 10;
+  const h = prices.length * (barH + gap) + pad * 2;
+  const w = canvas.parentElement.clientWidth;
+  canvas.width = w * dpr; canvas.height = h * dpr;
+  canvas.style.width = w + 'px'; canvas.style.height = h + 'px';
+  ctx.scale(dpr, dpr);
+
+  const maxQty = Math.max(...Object.values(buyMap), ...Object.values(sellMap), 1);
+  const barArea = (w - labelW) / 2;
+  const cx = labelW + barArea;
+
+  ctx.clearRect(0, 0, w, h);
+  ctx.strokeStyle = '#ddd'; ctx.setLineDash([3,3]);
+  ctx.beginPath(); ctx.moveTo(cx, pad); ctx.lineTo(cx, h - pad); ctx.stroke();
+  ctx.setLineDash([]);
+
+  prices.forEach((price, i) => {
+    const y = pad + i * (barH + gap);
+    const label = price === 0 ? 'MOC' : '$' + price.toFixed(2);
+    ctx.fillStyle = '#555'; ctx.font = '12px sans-serif'; ctx.textAlign = 'right';
+    ctx.fillText(label, labelW - 6, y + barH / 2 + 4);
+
+    const sq = sellMap[price] || 0;
+    const bq = buyMap[price] || 0;
+
+    if (sq > 0) {
+      const bw = sq / maxQty * barArea * 0.85;
+      ctx.fillStyle = '#4169E1';
+      ctx.fillRect(cx - bw, y, bw, barH);
+      ctx.fillStyle = '#4169E1'; ctx.font = 'bold 11px sans-serif'; ctx.textAlign = 'right';
+      ctx.fillText(sq, cx - bw - 4, y + barH / 2 + 4);
+    }
+    if (bq > 0) {
+      const bw = bq / maxQty * barArea * 0.85;
+      ctx.fillStyle = '#3CB371';
+      ctx.fillRect(cx, y, bw, barH);
+      ctx.fillStyle = '#3CB371'; ctx.font = 'bold 11px sans-serif'; ctx.textAlign = 'left';
+      ctx.fillText(bq, cx + bw + 4, y + barH / 2 + 4);
+    }
+  });
+}
+
+// ══════════════════════════════════════════════════════════════
+// 결과 렌더링
+// ══════════════════════════════════════════════════════════════
+
+function renderResult(el, title, sellOrders, buyOrders, close) {
+  const [eb, es, net] = simExec(buyOrders, sellOrders, close);
+  const rows = [];
+  sellOrders.forEach(o => rows.push(['매도', o[0], o[1], o[2]]));
+  buyOrders.forEach(o => rows.push(['매수', o[0], o[1], o[2]]));
+
+  let html = `<h2>${title}</h2>`;
+  if (rows.length) {
+    html += '<table><tr><th>구분</th><th>타입</th><th>가격</th><th>수량</th></tr>';
+    rows.forEach(r => {
+      const cls = r[0]==='매도' ? 'sell' : 'buy';
+      const p = r[1]==='MOC' ? 'MOC' : '$' + r[2].toFixed(2);
+      html += `<tr><td class="${cls}">${r[0]}</td><td>${r[1]}</td><td>${p}</td><td>${r[3]}</td></tr>`;
+    });
+    html += '</table>';
+  } else {
+    html += '<p style="color:#888;font-size:13px;">주문 없음 (모두 상쇄)</p>';
+  }
+  html += `<canvas id="${el.id}Chart"></canvas>`;
+  html += `<p class="exec-line">체결 (종가 $${close.toFixed(2)}): 매수 <b>${eb}주</b> / 매도 <b>${es}주</b> / 순변동 <b>${net>=0?'+':''}${net}주</b></p>`;
+  if (eb > 0 && es > 0) {
+    html += `<div class="alert alert-danger">자전거래: ${Math.min(eb,es)}주</div>`;
+  } else if (rows.length) {
+    html += `<div class="alert alert-success">자전거래 없음</div>`;
+  }
+  el.innerHTML = html;
+
+  requestAnimationFrame(() => {
+    const canvas = document.getElementById(el.id + 'Chart');
+    if (canvas) drawChart(canvas, buyOrders, sellOrders);
+  });
+
+  return [eb, es, net];
+}
+
+function calculate() {
+  const close = parseFloat(document.getElementById('closePrice').value) || 0;
+  const sd = sellData.filter(r => (parseInt(r[2])||0) > 0);
+  const bd = buyData.filter(r => (parseInt(r[2])||0) > 0);
+
+  if (!sd.length && !bd.length) { alert('주문을 입력해주세요.'); return; }
+
+  // 퉁치기 계산
+  const sellParsed = parseOrders(sd, '매도');
+  const buyParsed = parseOrders(bd, '매수');
+  const [nettedSell, nettedBuy] = netOrders(sellParsed, buyParsed);
+
+  const nSell = nettedSell.map(o => [o.type, o.price, o.quantity]);
+  const nBuy = nettedBuy.map(o => [o.type, o.price, o.quantity]);
+
+  document.getElementById('resultArea').style.display = 'block';
+
+  const [ob, os, on] = renderResult(
+    document.getElementById('origResult'), '원주문', sd, bd, close
+  );
+  const [nb, ns, nn] = renderResult(
+    document.getElementById('netResult'), '퉁치기 후', nSell, nBuy, close
+  );
+
+  // 검증
+  let vHtml = '';
+  if (on === nn) {
+    vHtml = `<div class="alert alert-success">순변동 일치: ${on>=0?'+':''}${on}주</div>`;
+  } else {
+    vHtml = `<div class="alert alert-danger">불일치! 원주문=${on>=0?'+':''}${on} vs 퉁치기=${nn>=0?'+':''}${nn}</div>`;
+  }
+
+  const origTB = bd.reduce((s,o)=>s+o[2],0), origTS = sd.reduce((s,o)=>s+o[2],0);
+  const netTB = nBuy.reduce((s,o)=>s+o[2],0), netTS = nSell.reduce((s,o)=>s+o[2],0);
+  if (origTB !== netTB || origTS !== netTS) {
+    vHtml += `<div class="alert alert-info">퉁치기 효과: 매수 ${origTB} → ${netTB}주, 매도 ${origTS} → ${netTS}주</div>`;
+  }
+  document.getElementById('verifyResult').innerHTML = vHtml;
+
+  document.getElementById('resultArea').scrollIntoView({behavior:'smooth'});
+}
+
+// 초기 렌더링
+renderOrders('sell');
+renderOrders('buy');
+
+// PWA 서비스워커 등록
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('sw.js').catch(()=>{});
+}
+</script>
+</body>
+</html>
