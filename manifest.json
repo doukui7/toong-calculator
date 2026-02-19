@@ -1,28 +1,58 @@
 {
+  "id": "/toong-calculator/",
   "name": "Toong Calculator - 퉁치기 계산기",
   "short_name": "퉁치기",
-  "description": "LOC/MOC 주문 자전거래 방지 상계 계산기",
+  "description": "LOC/MOC 주문 자전거래 방지 상계 계산기. 매도/매수 주문의 자전거래 구간을 자동 감지하고 상계 처리합니다.",
   "start_url": "./index.html",
+  "scope": "./",
   "display": "standalone",
   "orientation": "portrait",
   "background_color": "#f5f5f5",
   "theme_color": "#e74c3c",
   "lang": "ko",
+  "dir": "ltr",
   "icons": [
     {
       "src": "icons/icon-192.png",
       "sizes": "192x192",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
     },
     {
       "src": "icons/icon-512.png",
       "sizes": "512x512",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
+    },
+    {
+      "src": "icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
     }
   ],
   "categories": ["finance", "utilities"],
-  "screenshots": [],
+  "screenshots": [
+    {
+      "src": "screenshots/screenshot-wide.png",
+      "sizes": "1280x720",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "퉁치기 계산기 - 데스크톱"
+    },
+    {
+      "src": "screenshots/screenshot-narrow.png",
+      "sizes": "540x960",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "퉁치기 계산기 - 모바일"
+    }
+  ],
   "prefer_related_applications": false
 }
