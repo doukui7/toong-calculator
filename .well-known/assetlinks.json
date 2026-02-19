@@ -1,12 +1,8 @@
-[
-  {
-    "relation": ["delegate_permission/common.handle_all_urls"],
-    "target": {
-      "namespace": "android_app",
-      "package_name": "com.doukui7.toong",
-      "sha256_cert_fingerprints": [
-        "REPLACE_WITH_SHA256_FROM_PWABUILDER"
-      ]
-    }
-  }
-]
+[{
+      "relation": ["delegate_permission/common.handle_all_urls"],
+      "target": {
+        "namespace": "android_app",
+        "package_name": "com.doukui7.toong",
+        "sha256_cert_fingerprints": ["28:CE:BB:B8:F5:77:93:14:4B:24:80:80:92:54:33:2B:65:EB:F8:0F:2D:F1:C2:DA:E7:F9:75:23:CA:1D:F5:71"]
+      }
+    }]
