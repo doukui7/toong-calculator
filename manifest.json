@@ -37,5 +37,13 @@
     }
   ],
   "categories": ["finance", "utilities"],
+  "screenshots": [
+    {
+      "src": "screenshots/20260219_123104.png",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "퉁치기 계산기 - 주문 입력 및 붙여넣기 화면"
+    }
+  ],
   "prefer_related_applications": false
 }

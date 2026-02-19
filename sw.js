@@ -1,4 +1,4 @@
-const CACHE_NAME = 'toong-v1';
+const CACHE_NAME = 'toong-v2';
 const ASSETS = [
   './',
   './index.html',
@@ -25,6 +25,9 @@ self.addEventListener('activate', e => {
 
 // Fetch - cache-first strategy
 self.addEventListener('fetch', e => {
+  // Skip non-http(s) requests (e.g. chrome-extension://)
+  if (!e.request.url.startsWith('http')) return;
+
   e.respondWith(
     caches.match(e.request).then(cached => {
       if (cached) return cached;
